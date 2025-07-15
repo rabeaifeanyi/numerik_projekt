@@ -1,32 +1,32 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from vortex_flow import Grid2D, VortexSolver, LidDrivenCavity #, TaylorGreen, KarmanVortexStreet lol
+from vortex_flow import Grid2D, Solver, LidDrivenCavity #, TaylorGreen, KarmanVortexStreet lol
 
-# man d
-# Parameters
-NX, NY = 64, 64 # Gr
-N_STEPS = 500 # iterationsschritte
-OUTPUT_FREQUENCY = 500 # kleiner wenn man Zwischenschritte will
+if __name__ == "__main__":
+    # Parameter
+    NX, NY = 64, 64
+    N_STEPS = 100  # Kleiner Wert für schnellen Test
+    OUTPUT_FREQUENCY = 10  
 
-# Initialisation
-problem = LidDrivenCavity()
-grid = Grid2D(nx=NX, ny=NY, lx=1.0, ly=1.0)
-omega0 = problem.initial_conditions(grid)
 
-solver = VortexSolver(grid=grid, nu=0.01, dt=0.001)
-solver.set_initial_conditions(omega0)
+    # Initialisation
+    problem = LidDrivenCavity()
+    grid = Grid2D(n=NX, m=NY, lx=1.0, ly=1.0)
+    omega0 = problem.initial_conditions(grid)
 
-# Simulation
-for step in range(N_STEPS):
-    solver.solve_poisson()
-    solver.compute_velocity()
-    solver.time_step()
+    solver = Solver(grid=grid, nu=0.01, dt=0.001, problem=problem)
+    solver.set_initial_conditions(omega0)
 
-    if step % OUTPUT_FREQUENCY == 0:
-        plt.clf()
-        plt.imshow(solver.omega, origin="lower", cmap="seismic")
-        plt.title(f"Step {step}")
-        plt.colorbar()
-        plt.pause(0.1)
+    # Simulation
+    for step in range(1, N_STEPS+1):
+        solver.solve_poisson()
+        solver.compute_velocity()
+        solver.time_step()
 
-plt.show()
+        if step % OUTPUT_FREQUENCY == 0:
+            plt.clf()
+            plt.imshow(solver.omega, origin="lower", cmap="seismic")
+            plt.title(f"Step {step}")
+            plt.colorbar()
+            plt.pause(0.2)
+
+    plt.show()
