@@ -1,5 +1,5 @@
 # Notizen
 
-- Man darf alles von numpy benutzen
-- Freies Rumprobieren
-- Man darf Fehlerordnungen hardcoden
+- :)
+- Alles im config ändern
+- Laufen lassen mit: `python main.py --live --log --gif`

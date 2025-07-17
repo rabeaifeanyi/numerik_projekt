@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import os
 
+#TODO cooler machen
+
 def plot_velocity_field(X, Y, u, v, u_mag, t, folder):
     fig, ax = plt.subplots()
     ax.invert_yaxis()

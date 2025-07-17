@@ -7,6 +7,5 @@ from .solver_funcs import (
     vorticity_rhs,
     compute_rhs,
     euler_step,
-    rk4_step,
-    make_masks
+    rk4_step
 )

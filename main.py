@@ -10,7 +10,6 @@ def parse_args():
     parser.add_argument("--log", action="store_true", help="Enable logging")
     parser.add_argument("--live", action="store_true", help="Show live plot")
     parser.add_argument("--gif", action="store_true", help="Create GIF at end")
-    parser.add_argument("--mp3", action="store_true", help="Create MP3 at end")
     
     return parser.parse_args()
 
@@ -67,16 +66,12 @@ def main():
             if args.live:
                 import matplotlib.pyplot as plt
                 plt.clf()
-                plt.contourf(grid.X, grid.Y, u_mag)
+                plt.contourf(grid.X, grid.Y, u_mag) #TODO
                 plt.pause(0.01)
     
-    # if args.gif:
-    #     from plotting.create_gif import create_gif_from_folder
-    #     create_gif_from_folder(folder)
-
-    # if args.mp3:
-    #     from plotting.create_mp3 import create_mp3_from_data
-    #     create_mp3_from_data(folder)
+    if args.gif:
+        from plotting.create_gif import create_gif_from_folder
+        create_gif_from_folder(folder)
 
 if __name__ == "__main__":
     main()
