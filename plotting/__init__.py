@@ -1,1 +1,1 @@
-from .plotting import plot_velocity_field
+from .plotting import plot_velocity_field, VelocityRenderer

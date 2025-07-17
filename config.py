@@ -6,8 +6,8 @@ Re = 400
 U_tang = 1.0
 U_noSlip = 0.0
 CFL = 0.3
-steps = 10000
-save_interval = 100
+steps = 1000
+save_interval = 5
 
 problem = "lid_standard"
 
