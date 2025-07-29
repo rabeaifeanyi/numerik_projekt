@@ -202,7 +202,7 @@ def main():
     DIM_X, DIM_Y = 1.0, 1.0           # Größe des Simulationsfelds (Breite x Höhe)
 
     # --- Auflösung des Gitters ---
-    NX, NY = 80, 80                   # Gitterauflösung (je mehr, desto genauer – aber langsamer)
+    NX, NY = 80, 80                   # Gitterauflösung 
 
     # --- Simulationsdauer ---
     N_INTER = 10000                   # Anzahl Zeitschritte
@@ -211,7 +211,7 @@ def main():
     SAVE_INTERVAL = 100               # Alle wie viele Zeitschritte soll ein Snapshot gespeichert werden?
 
     # --- CFL-Zahl ---
-    CFL = 0.3                         # Stabilitätsbedingung → bei Werten über 1.0 wird es instabil
+    CFL = 0.3                         # Stabilitätsbedingung → bei Werten über 1.0 wird es instabil (so kann man einen "crash" verursachen)
 
     # --- Reynolds-Zahl ---
     RE = 400                          # Beeinflusst die Turbulenz/Stabilität der Strömung
