@@ -45,10 +45,10 @@ def plot_velocity_field(X, Y, u, v, u_mag, t, folder,
     """
 
     fig, ax = plt.subplots()
-    ax.invert_yaxis()  # Für konsistente Darstellung wie in vielen CFD-Plots (y = 0 oben)
+    ax.invert_yaxis()
 
-    # Konturplot der Geschwindigkeit (mit PowerNorm für Kontrastverstärkung bei kleinen Werten)
-    norm = PowerNorm(gamma=0.8, vmin=0, vmax=1.0)
+    # Konturplot der Geschwindigkeit (mit PowerNorm "verstärkt" kleine Werte)
+    norm = PowerNorm(gamma=0.8, vmin=0) # TODO herausfinden, warum Maximalbereiche weiß werden
     ax.contourf(X, Y, u_mag, levels=CONTOUR_LEVELS, cmap="turbo", norm=norm)
 
     # Optional: Stromlinien darstellen
@@ -57,14 +57,14 @@ def plot_velocity_field(X, Y, u, v, u_mag, t, folder,
 
     # Optional: Vektorfeld darstellen
     if plot_quiver:
-        mag_max = 0.65  # Maximal dargestellte Pfeillänge (normalisiert)
+        mag_max = 0.6  # Maximale Pfeillänge begrenzen
 
-        # Faktor zur Begrenzung extremer Pfeillängen
-        factor = np.minimum(1, mag_max / (u_mag + 1e-8))  # +epsilon gegen Division durch 0
+        # Faktor zur Begrenzung extrem langer Pfeile
+        factor = np.minimum(1, mag_max / (u_mag + 1e-8))
         U_clipped = u * factor
         V_clipped = v * factor
 
-        amplify = 2  # Verstärkungsfaktor zur besseren Sichtbarkeit
+        amplify = 2  
         U_scaled = U_clipped * amplify
         V_scaled = V_clipped * amplify
 
@@ -75,7 +75,7 @@ def plot_velocity_field(X, Y, u, v, u_mag, t, folder,
             U_scaled[1:-1:vector_field_step, 1:-1:vector_field_step],
             -V_scaled[1:-1:vector_field_step, 1:-1:vector_field_step],  # invertiere y-Richtung
             color='white',
-            scale=9,
+            scale=9, # hier kann man dran schrauben, wenn man mit den Längen der Pfeilen unzufrieden ist (höher macht kürzer)
         )
 
     # Optionaler Plot-Titel
@@ -88,7 +88,6 @@ def plot_velocity_field(X, Y, u, v, u_mag, t, folder,
     # Bild abspeichern
     plt.savefig(f"{folder}/t{t:05}_contour.png")
     plt.close()
-
 
 # -------------------------------------------------------------------------------------- #
 #                                GIF AUS BILDERN ERSTELLEN                               #

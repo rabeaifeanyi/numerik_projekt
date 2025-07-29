@@ -6,7 +6,6 @@
 import os
 import numpy as np
 import scipy.sparse as sp
-import os
 import argparse
 import sys
 from datetime import datetime
@@ -45,7 +44,7 @@ def solve_poisson(omega_flat, Dxx, Dyy, Nx, Ny, mask_boundary, psi_bc):
     psi_flat = sp.linalg.spsolve(A, b)
     return psi_flat
 
-def compute_velocity(psi_flat, Dx, Dy, Nx, Ny,
+def compute_velocity(psi_flat, Dx, Dy,
                      U_top, U_bottom, U_left, U_right,
                      mask_top, mask_bottom, mask_left, mask_right):
     """
@@ -96,10 +95,51 @@ def compute_rhs(omega_flat, Dx, Dy, Dxx, Dyy, Nx, Ny, mask_boundary, psi_bc, U_t
     Wrapper für vollständige Berechnung der RHS der Vorticity-Gleichung.
     """
     psi_flat = solve_poisson(omega_flat, Dxx, Dyy, Nx, Ny, mask_boundary, psi_bc)
-    u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, Nx, Ny, U_top, U_bottom, U_left, U_right, mask_top, mask_bottom, mask_left, mask_right)
+    u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, U_top, U_bottom, U_left, U_right, mask_top, mask_bottom, mask_left, mask_right)
     rhs_flat = vorticity_rhs(omega_flat, u_flat, v_flat, Dx, Dy, Dxx, Dyy, Nx, Ny, nu, mask_boundary)
     
     return rhs_flat
+
+# -------------------------------------------------------------------------------------- #
+#                                    RANDBEDINGUNGEN                                     #
+# -------------------------------------------------------------------------------------- #
+def init_velocity(type="constant"):
+    """
+    Gibt je eine Funktion zurück, die die Wandgeschwindigkeit in Abhängigkeit von der Zeit liefert.
+    """
+    if type == "constant":
+        def U_top(t): return 1.0                                # konstant
+        def U_bottom(t): return 0.0                             # ruht
+        def U_left(t): return 0.0                               # ruht
+        def U_right(t): return 0.0                              # ruht
+
+    elif type == "positive-sine":
+        def U_top(t): return 1 + np.sin(2 * np.pi * t / 2000)   # sinusförmig
+        def U_bottom(t): return 0.0                             # ruht
+        def U_left(t): return 0.0                               # ruht
+        def U_right(t): return 0.0                              # ruht
+    
+    elif type == "sine":
+        def U_top(t):
+            if t == 0: return 1.0
+            else: return np.sin(2 * np.pi * t / 2000)           # sinusförmig
+        def U_bottom(t): return 0.0                             # ruht
+        def U_left(t): return 0.0                               # ruht
+        def U_right(t): return 0.0                              # ruht
+
+    elif type == "top-bottom":
+        def U_top(t): return 1.0                                # konstant
+        def U_bottom(t): return 1.0                             # konstant
+        def U_left(t): return 0.0                               # ruht
+        def U_right(t): return 0.0                              # ruht
+
+    elif type == "test":
+        def U_top(t): return 1.0                                # konstant
+        def U_bottom(t): return 0.0                             # ruht
+        def U_left(t): return 1.0                               # konstant
+        def U_right(t): return 0.0                              # ruht
+    
+    return U_top, U_bottom, U_left, U_right
 
 # -------------------------------------------------------------------------------------- #
 #                                 ZEITSCHRITT-FUNKTIONEN                                 #
@@ -114,7 +154,7 @@ def euler_step(f, y, dt):
 
 def rk4_step(f, y, dt):
     """
-    Klassisches Runge-Kutta 4-Verfahren (besserer Integrator).
+    Klassisches Runge-Kutta Verfahren.
     """
     k1 = f(y)
     k2 = f(y + 0.5 * dt * k1)
@@ -154,18 +194,22 @@ def progress_bar(t, steps, bar_length=40):
 def main():
     # Initialisierung vom Parser
     args = parse_args()
-
+    
+    ##################################### Einstellungen #################################################
     # --- Simulationsparameter ---
     DIM_X, DIM_Y = 1.0, 1.0
-    NX, NY = 30, 30   # columns, rows
-    N_INTER = 1000
+    NX, NY = 80, 80  # columns, rows
+    N_INTER = 5000
     SAVE_INTERVAL = 100
     CFL = 0.3
     RE = 400
+    RANDBEDINGUNG = "test"         # "constant", "sine", "top-bottom", "test"
+    TIMESTEP_METHOD = "euler"      # "euler", "runge-kutta"
+    #####################################################################################################
     
     # Zeitstempel für eindeutige Ordnerstruktur
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    folder = f"plots/plots_CFL{CFL:.2f}_Re{RE}_{timestamp}".replace(".", "p")
+    folder = f"plots/plots_CFL{CFL:.2f}_Re{RE}_{TIMESTEP_METHOD}_{RANDBEDINGUNG}_{timestamp}".replace(".", "p")
     os.makedirs(folder)
 
     # --- Gitter erstellen ---
@@ -178,12 +222,11 @@ def main():
 
     # --- Randbedingungen und Parameter ---
     psi_bc = np.zeros((NY, NX))     # Stromfunktion an den Rändern
-    U_top = 1.0
-    U_noslip = 0.0
-    U_bottom = U_left = U_right = U_noslip
 
-    nu = abs(U_top) * DIM_X / RE   # Kinematische Viskosität
-    dt = CFL * dx / abs(U_top)     # Zeitschritt aus CFL-Bedingung
+    U_top_func, U_bottom_func, U_left_func, U_right_func = init_velocity(RANDBEDINGUNG)
+
+    nu = abs(U_top_func(0)) * DIM_X / RE   # Kinematische Viskosität
+    dt = CFL * dx / abs(U_top_func(0))     # Zeitschritt aus CFL-Bedingung
 
     # --- Initialisierung ---
     np.random.seed(1234)
@@ -246,8 +289,6 @@ def main():
 
     # --- Haupt-Zeitschleife ---
     for t in range(N_INTER):
-        U_sin = U_top * np.sin(2 * np.pi * t / 500)
-
         def rhs_func(omega):
             return compute_rhs(
                 omega_flat=omega,
@@ -263,25 +304,26 @@ def main():
                 mask_left=mask_left, 
                 mask_right=mask_right,
                 psi_bc=psi_bc,
-                U_top=U_sin,
-                U_bottom=U_bottom,
-                U_left=U_left,
-                U_right=U_right,
+                U_top=U_top_func(t),
+                U_bottom=U_bottom_func(t),
+                U_left=U_left_func(t),
+                U_right=U_right_func(t),
                 nu=nu
             )
 
-        # --- Euler ---
-        omega_flat[:] = euler_step(rhs_func, omega_flat, dt)
-        
-        # --- RK4 ---
-        # omega_flat = rk4_step(rhs_func, omega_flat, dt)
+        if TIMESTEP_METHOD == "euler":
+            # --- Euler ---
+            omega_flat[:] = euler_step(rhs_func, omega_flat, dt)
+        elif TIMESTEP_METHOD == "runge-kutta":
+            # --- RK4 ---
+            omega_flat = rk4_step(rhs_func, omega_flat, dt)
 
         if t % SAVE_INTERVAL == 0:
             progress_bar(t, N_INTER)
 
             # Update psi, u, v
             psi_flat = solve_poisson(omega_flat, Dxx, Dyy, NX, NY, mask_boundary, psi_bc)
-            u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, NX, NY, U_top, U_bottom, U_left, U_right, mask_top, mask_bottom, mask_left, mask_right)
+            u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, U_top_func(t), U_bottom_func(t), U_left_func(t), U_right_func(t), mask_top, mask_bottom, mask_left, mask_right)
 
             # Speichern für spätere Nutzung
             psi_list.append(psi_flat.reshape((NY, NX)))
