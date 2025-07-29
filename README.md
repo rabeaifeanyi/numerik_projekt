@@ -1,5 +1,7 @@
 # 🌀 2D-Strömungssimulation
 
+![Simulation](gifs/plots_CFL0p30_Re400_euler_positive-sine_2025-07-29_12-24-09.gif)
+
 ## Setup mit micromamba (oder conda)
 
 ### 1. Umgebung erstellen
