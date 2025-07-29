@@ -11,7 +11,7 @@ import sys
 from datetime import datetime
 
 # -------------------------------------------------------------------------------------- #
-#                                     EIGNE SKRIPTE                                      #
+#                                     EIGENE SKRIPTE                                      #
 # -------------------------------------------------------------------------------------- #
 # Eigenes Modul mit Ableitungsmatrizen importieren aus fdm.py
 from fdm import derivative_matrix_2d
