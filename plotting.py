@@ -92,7 +92,7 @@ def plot_velocity_field(X, Y, u, v, u_mag, t, folder,
 # -------------------------------------------------------------------------------------- #
 #                                GIF AUS BILDERN ERSTELLEN                               #
 # -------------------------------------------------------------------------------------- #
-def create_gif_from_folder(image_folder, output_folder="gifs", time=""):
+def create_gif_from_folder(image_folder, output_folder="gifs"):
     """
     Erstellt ein animiertes GIF aus allen gespeicherten Einzelbildern (PNG) in einem Ordner.
 
@@ -106,7 +106,7 @@ def create_gif_from_folder(image_folder, output_folder="gifs", time=""):
     image_files = sorted(glob.glob(os.path.join(image_folder, 't*_contour.png')))
 
     # Zielpfad des GIFs
-    output_gif = os.path.join(output_folder, f'{os.path.basename(image_folder)}_{time}.gif')
+    output_gif = os.path.join(output_folder, f'{os.path.basename(image_folder)}.gif')
 
     # GIF schreiben 
     os.makedirs(output_folder, exist_ok=True)

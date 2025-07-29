@@ -199,11 +199,11 @@ def main():
     # --- Simulationsparameter ---
     DIM_X, DIM_Y = 1.0, 1.0
     NX, NY = 80, 80  # columns, rows
-    N_INTER = 5000
+    N_INTER = 10000
     SAVE_INTERVAL = 100
     CFL = 0.3
     RE = 400
-    RANDBEDINGUNG = "test"         # "constant", "sine", "top-bottom", "test"
+    RANDBEDINGUNG = "sine"         # "constant", "sine", sine-positive", "top-bottom", "test"
     TIMESTEP_METHOD = "euler"      # "euler", "runge-kutta"
     #####################################################################################################
     
