@@ -232,7 +232,7 @@ def main():
     TIMESTEP_METHOD = "euler"
     #####################################################################################################
     
-    # Zeitstempel für eindeutige Ordnerstruktur
+    # Zeitstempel für eindeutige Ordner
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     folder = f"plots/plots_CFL{CFL:.2f}_Re{RE}_{TIMESTEP_METHOD}_{RANDBEDINGUNG}_{timestamp}".replace(".", "p")
     os.makedirs(folder)
