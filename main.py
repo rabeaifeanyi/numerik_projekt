@@ -196,15 +196,40 @@ def main():
     args = parse_args()
     
     ##################################### Einstellungen #################################################
-    # --- Simulationsparameter ---
-    DIM_X, DIM_Y = 1.0, 1.0
-    NX, NY = 80, 80  # columns, rows
-    N_INTER = 10000
-    SAVE_INTERVAL = 100
-    CFL = 0.3
-    RE = 400
-    RANDBEDINGUNG = "sine"         # "constant", "sine", sine-positive", "top-bottom", "test"
-    TIMESTEP_METHOD = "euler"      # "euler", "runge-kutta"
+    # Du kannst hier einstellen, was genau simuliert werden soll!
+
+    # --- Simulationsbereich ---
+    DIM_X, DIM_Y = 1.0, 1.0           # Größe des Simulationsfelds (Breite x Höhe)
+
+    # --- Auflösung des Gitters ---
+    NX, NY = 80, 80                   # Gitterauflösung (je mehr, desto genauer – aber langsamer)
+
+    # --- Simulationsdauer ---
+    N_INTER = 10000                   # Anzahl Zeitschritte
+
+    # --- Speicherintervall ---
+    SAVE_INTERVAL = 100               # Alle wie viele Zeitschritte soll ein Snapshot gespeichert werden?
+
+    # --- CFL-Zahl ---
+    CFL = 0.3                         # Stabilitätsbedingung → bei Werten über 1.0 wird es instabil
+
+    # --- Reynolds-Zahl ---
+    RE = 400                          # Beeinflusst die Turbulenz/Stabilität der Strömung
+
+    # --- Randbedingungen ("Bewegung der Wände") ---
+    # Beispiele:
+    #   - "constant"        → Obere Wand konstant (z. B. u = 1), Rest ruht → klassischer Fall
+    #   - "sine"            → Obere Wand sinusförmig 
+    #   - "sine-positive"   → Nur positive Sinusbewegung, bzw. sinus plus 1, also kein Richtungswechsel
+    #   - "top-bottom"      → Oben + unten bewegen sich, hier von links nach rechts
+    #   - "test"            → Zum testen
+    # Wenn du was testen willst einfach bei init_velocity() hinzufügen
+    RANDBEDINGUNG = "sine"
+
+    # --- Zeitintegrationsmethode ---
+    #   - "euler"           → Einfach, aber ungenau und instabil bei großen Zeitschritten
+    #   - "runge-kutta"     → Stabiler und genauer, noch nicht getestet #TODO
+    TIMESTEP_METHOD = "euler"
     #####################################################################################################
     
     # Zeitstempel für eindeutige Ordnerstruktur
