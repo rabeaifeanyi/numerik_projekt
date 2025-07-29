@@ -42,6 +42,7 @@ def solve_poisson(omega_flat, Dxx, Dyy, Nx, Ny, mask_boundary, psi_bc):
     b = notB * - omega_flat + B * psi_bc_flat
 
     psi_flat = sp.linalg.spsolve(A, b)
+    
     return psi_flat
 
 def compute_velocity(psi_flat, Dx, Dy,
@@ -72,11 +73,13 @@ def compute_velocity(psi_flat, Dx, Dy,
 
     return u_flat, v_flat
 
-def vorticity_rhs(omega_flat, u_flat, v_flat, Dx, Dy, Dxx, Dyy, Nx, Ny, nu, mask_boundary):
+def vorticity_rhs(omega_flat, u_flat, v_flat, 
+                  Dx, Dy, Dxx, Dyy, Nx, Ny, nu, mask_boundary):
     """
     Berechnet die rechte Seite der Vorticity-Gleichung:
     ∂ω/∂t = -u ∂ω/∂x - v ∂ω/∂y + ν Δω
     """
+    # Matrizen vektorisieren
     B = np.reshape(mask_boundary, (Ny * Nx))
     notB = 1.0 - B
 
@@ -90,9 +93,12 @@ def vorticity_rhs(omega_flat, u_flat, v_flat, Dx, Dy, Dxx, Dyy, Nx, Ny, nu, mask
 
     return rhs_flat
 
-def compute_rhs(omega_flat, Dx, Dy, Dxx, Dyy, Nx, Ny, mask_boundary, psi_bc, U_top, U_bottom, U_left, U_right, mask_top,  mask_bottom, mask_left, mask_right, nu):
+def compute_rhs(omega_flat, Dx, Dy, Dxx, Dyy, Nx, Ny, 
+                mask_boundary, psi_bc, 
+                U_top, U_bottom, U_left, U_right, 
+                mask_top,  mask_bottom, mask_left, mask_right, nu):
     """
-    Wrapper für vollständige Berechnung der RHS der Vorticity-Gleichung.
+    Wrapper für Berechnung der RHS in der Vorticity-Gleichung.
     """
     psi_flat = solve_poisson(omega_flat, Dxx, Dyy, Nx, Ny, mask_boundary, psi_bc)
     u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, U_top, U_bottom, U_left, U_right, mask_top, mask_bottom, mask_left, mask_right)
@@ -147,6 +153,7 @@ def init_velocity(type="constant"):
 def euler_step(f, y, dt):
     """
     Einfacher expliziter Euler-Zeitintegrator.
+    f muss eine Funktion von y sein.
     """
     y_new = y + dt * f(y) 
     
@@ -155,6 +162,7 @@ def euler_step(f, y, dt):
 def rk4_step(f, y, dt):
     """
     Klassisches Runge-Kutta Verfahren.
+    f muss eine Funktion von y sein.
     """
     k1 = f(y)
     k2 = f(y + 0.5 * dt * k1)
@@ -246,6 +254,7 @@ def main():
     dy = y[1] - y[0]
 
     # --- Randbedingungen und Parameter ---
+    # Ganzes zero array, weil durch Piece-wise multiplication mit B eh nur der Rand gefiltert wird.
     psi_bc = np.zeros((NY, NX))     # Stromfunktion an den Rändern
 
     U_top_func, U_bottom_func, U_left_func, U_right_func = init_velocity(RANDBEDINGUNG)
@@ -255,7 +264,7 @@ def main():
 
     # --- Initialisierung ---
     np.random.seed(1234)
-    omega_init = 1e-2 * (np.random.rand(NY, NX) - 0.5)
+    omega_init = 1e-2 * (np.random.rand(NY, NX) - 0.5) # random werte zwischen -0.5 und 0.5
     psi_init = np.zeros((NY, NX))
     u_init = np.zeros((NY, NX))
     v_init = np.zeros((NY, NX))
@@ -267,9 +276,11 @@ def main():
     mask_boundary[:,0] = 1
     mask_boundary[:,-1] = 1
 
+    # Maske für den Deckel:
     mask_top = np.zeros((NY, NX), dtype = int)
     mask_top[0, :] = 1
 
+    # Maske für Wände (neuerdings aufgesplittet) #TODO testen, ob das richtig implementiert ist
     mask_bottom = np.zeros((NY, NX), dtype=int)
     mask_bottom[-1, :] = 1
 
@@ -285,7 +296,7 @@ def main():
     Dxx = derivative_matrix_2d(NX, NY, dx, dy, axis='x',order=2)
     Dyy = derivative_matrix_2d(NX, NY, dx, dy, axis='y',order=2)
 
-    # --- Flattened Felder für Vektoroperationen ---
+    # --- Flattened Arrays für Vektoroperationen ---
     omega_flat = np.reshape(omega_init, (NY * NX))
     psi_flat = np.reshape(psi_init, (NY * NX))
     u_flat = np.reshape(u_init, (NY * NX))
@@ -314,6 +325,7 @@ def main():
 
     # --- Haupt-Zeitschleife ---
     for t in range(N_INTER):
+        # wrapper function for multi-step integration schemes such as RK4
         def rhs_func(omega):
             return compute_rhs(
                 omega_flat=omega,
@@ -336,12 +348,11 @@ def main():
                 nu=nu
             )
 
+        # --- Zeitschrittverfahren ---
         if TIMESTEP_METHOD == "euler":
-            # --- Euler ---
-            omega_flat[:] = euler_step(rhs_func, omega_flat, dt)
+            omega_flat[:] = euler_step(rhs_func, omega_flat, dt) # Euler
         elif TIMESTEP_METHOD == "runge-kutta":
-            # --- RK4 ---
-            omega_flat = rk4_step(rhs_func, omega_flat, dt)
+            omega_flat = rk4_step(rhs_func, omega_flat, dt) # RK4
 
         if t % SAVE_INTERVAL == 0:
             progress_bar(t, N_INTER)
@@ -358,15 +369,17 @@ def main():
 
             # Geschwindigkeitsbetrag
             u_mag = np.sqrt(u_list[-1] ** 2 + v_list[-1] ** 2)
-            
+
+            #TODO Möglichkeit für das Erstellen von Plot von Zwischenstand mit Colorbar, Beschriftung und etc. für Bericht hinzufügen
             if args.gif:
+                # aktuelle nur Plotten wenn Gif erzeugt wird
                 plot_velocity_field(X, Y, u_list[-1], v_list[-1], u_mag, t, folder)
 
-    # --- GIF-Erstellung am Ende ---
+    # --- Optional: GIF-Erstellung am Ende ---
     if args.gif:
         create_gif_from_folder(folder, time=f"{timestamp}")
 
-    # --- Ergebnisse speichern ---
+    # --- Optional: Ergebnisse speichern ---
     if args.save:
         np.savez_compressed(
             f"{folder}/final_state.npz",
@@ -376,7 +389,7 @@ def main():
             omega=omega_list[-1]
         )
 
-    # --- Ergebnisse ausgeben ---
+    # --- Optional: Ergebnisse ausgeben ---
     if args.result_print:
         print(f'Final psi:\n{psi_list[-1]}')
         print(f'Final u:\n{u_list[-1]}')
