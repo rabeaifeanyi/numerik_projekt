@@ -1,3 +1,9 @@
+##############################################################################################
+# TODO Erklärungstext hier einfügen
+# Gehe zum Abschnitt EINSTELLUNGEN (ca. Zeile 200), um Simulationsparameter anzupassen.
+##############################################################################################
+
+
 ######################################### IMPORTE ############################################
 
 # -------------------------------------------------------------------------------------- #
@@ -11,7 +17,7 @@ import sys
 from datetime import datetime
 
 # -------------------------------------------------------------------------------------- #
-#                                     EIGENE SKRIPTE                                      #
+#                                     EIGENE SKRIPTE                                     #
 # -------------------------------------------------------------------------------------- #
 # Eigenes Modul mit Ableitungsmatrizen importieren aus fdm.py
 from fdm import derivative_matrix_2d
@@ -101,7 +107,8 @@ def compute_rhs(omega_flat, Dx, Dy, Dxx, Dyy, Nx, Ny,
     Wrapper für Berechnung der RHS in der Vorticity-Gleichung.
     """
     psi_flat = solve_poisson(omega_flat, Dxx, Dyy, Nx, Ny, mask_boundary, psi_bc)
-    u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, U_top, U_bottom, U_left, U_right, mask_top, mask_bottom, mask_left, mask_right)
+    u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, U_top, U_bottom, U_left, U_right, 
+                                      mask_top, mask_bottom, mask_left, mask_right)
     rhs_flat = vorticity_rhs(omega_flat, u_flat, v_flat, Dx, Dy, Dxx, Dyy, Nx, Ny, nu, mask_boundary)
     
     return rhs_flat
@@ -219,7 +226,8 @@ def main():
     SAVE_INTERVAL = 100               # Alle wie viele Zeitschritte soll ein Snapshot gespeichert werden?
 
     # --- CFL-Zahl ---
-    CFL = 0.3                         # Stabilitätsbedingung → bei Werten über 1.0 wird es instabil (so kann man einen "crash" verursachen)
+    CFL = 0.3                         # Stabilitätsbedingung → bei Werten über 1.0 wird es instabil 
+                                      # (so kann man einen "crash" verursachen)
 
     # --- Reynolds-Zahl ---
     RE = 400                          # Beeinflusst die Turbulenz/Stabilität der Strömung
@@ -359,7 +367,8 @@ def main():
 
             # Update psi, u, v
             psi_flat = solve_poisson(omega_flat, Dxx, Dyy, NX, NY, mask_boundary, psi_bc)
-            u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, U_top_func(t), U_bottom_func(t), U_left_func(t), U_right_func(t), mask_top, mask_bottom, mask_left, mask_right)
+            u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, U_top_func(t), U_bottom_func(t), U_left_func(t), U_right_func(t), 
+                                              mask_top, mask_bottom, mask_left, mask_right)
 
             # Speichern für spätere Nutzung
             psi_list.append(psi_flat.reshape((NY, NX)))
