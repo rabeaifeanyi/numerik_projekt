@@ -52,8 +52,8 @@ def solve_poisson(omega_flat, Dxx, Dyy, Nx, Ny, mask_boundary, psi_bc):
     return psi_flat
 
 def compute_velocity(psi_flat, Dx, Dy,
-                     U_top, U_bottom, U_left, U_right,
-                     mask_top, mask_bottom, mask_left, mask_right):
+                     U_top, U_bottom, U_left, U_right, V_top, V_bottom, V_left, V_right,
+                     mask_top, mask_bottom, mask_left, mask_right, mask_boundary):
     """
     Berechnet u und v-Geschwindigkeiten aus ψ (Stromfunktion).
     Berücksichtigt individuell einstellbare Randgeschwindigkeiten für:
@@ -67,13 +67,15 @@ def compute_velocity(psi_flat, Dx, Dy,
     W_right = mask_right.ravel()
 
     # Punkte, die nicht an einer Wand liegen
-    not_boundary = 1.0 - (W_top + W_bottom + W_left + W_right)
+    not_boundary = 1.0 - mask_boundary.ravel() # Alles außer die Ränder
 
     # Berechne u = ∂ψ/∂y + Randgeschwindigkeit
-    u_flat = (Dy @ psi_flat) * not_boundary + U_top * W_top + U_bottom * W_bottom
+    u_flat = (Dy @ psi_flat) * not_boundary + U_top * W_top + U_bottom * W_bottom + U_left * W_left + U_right * W_right
 
     # Berechne v = -∂ψ/∂x + Randgeschwindigkeit
-    v_flat = (-Dx @ psi_flat) * not_boundary + U_left * W_left + U_right * W_right
+    v_flat = (-Dx @ psi_flat) * not_boundary + V_top * W_top + V_bottom * W_bottom + V_left * W_left + V_right * W_right
+
+    #TODO Ecken lieber null, gegebenenfalls Timon Fragen was besser ist
 
     return u_flat, v_flat
 
@@ -99,14 +101,17 @@ def vorticity_rhs(omega_flat, u_flat, v_flat,
 
 def compute_rhs(omega_flat, Dx, Dy, Dxx, Dyy, Nx, Ny, 
                 mask_boundary, psi_bc, 
-                U_top, U_bottom, U_left, U_right, 
+                U_top, U_bottom, U_left, U_right, #
+                V_top, V_bottom, V_left, V_right, 
                 mask_top,  mask_bottom, mask_left, mask_right, nu):
     """
     Wrapper für Berechnung der RHS in der Vorticity-Gleichung.
     """
     psi_flat = solve_poisson(omega_flat, Dxx, Dyy, Nx, Ny, mask_boundary, psi_bc)
-    u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, U_top, U_bottom, U_left, U_right, 
-                                      mask_top, mask_bottom, mask_left, mask_right)
+    u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, 
+                                      U_top, U_bottom, U_left, U_right, 
+                                      V_top, V_bottom, V_left, V_right, 
+                                      mask_top, mask_bottom, mask_left, mask_right, mask_boundary)
     rhs_flat = vorticity_rhs(omega_flat, u_flat, v_flat, Dx, Dy, Dxx, Dyy, Nx, Ny, nu, mask_boundary)
     
     return rhs_flat
@@ -121,36 +126,61 @@ def init_velocity(type="constant"):
     if type == "constant":
         def U_top(t): return 1.0                                # konstant
         def U_bottom(t): return 0.0                             # ruht
-        def U_left(t): return 0.0                               # ruht
-        def U_right(t): return 0.0                              # ruht
+        def U_left(t): return 0.0                               # immer 0
+        def U_right(t): return 0.0                              # immer 0
+        
+        def V_top(t): return 0.0                                # immer 0
+        def V_bottom(t): return 0.0                             # immer 0
+        def V_left(t): return 0.0                               # ruht
+        def V_right(t): return 0.0                              # ruht
 
     elif type == "positive-sine":
         def U_top(t): return 1 + np.sin(2 * np.pi * t / 2000)   # sinusförmig
         def U_bottom(t): return 0.0                             # ruht
-        def U_left(t): return 0.0                               # ruht
-        def U_right(t): return 0.0                              # ruht
+        def U_left(t): return 0.0                               # immer 0
+        def U_right(t): return 0.0                              # immer 0
+
+        def V_top(t): return 0.0                                # immer 0
+        def V_bottom(t): return 0.0                             # immer 0
+        def V_left(t): return 0.0                               # ruht
+        def V_right(t): return 0.0                              # ruht
     
     elif type == "sine":
         def U_top(t):
             if t == 0: return 1.0
             else: return np.sin(2 * np.pi * t / 2000)           # sinusförmig
         def U_bottom(t): return 0.0                             # ruht
-        def U_left(t): return 0.0                               # ruht
-        def U_right(t): return 0.0                              # ruht
+        def U_left(t): return 0.0                               # immer 0
+        def U_right(t): return 0.0                              # immer 0
+
+        def V_top(t): return 0.0                                # immer 0
+        def V_bottom(t): return 0.0                             # immer 0
+        def V_left(t): return 0.0                               # ruht
+        def V_right(t): return 0.0                              # ruht
 
     elif type == "top-bottom":
         def U_top(t): return 1.0                                # konstant
         def U_bottom(t): return 1.0                             # konstant
-        def U_left(t): return 0.0                               # ruht
-        def U_right(t): return 0.0                              # ruht
+        def U_left(t): return 0.0                               # immer 0
+        def U_right(t): return 0.0                              # immer 0
+
+        def V_top(t): return 0.0                                # immer 0
+        def V_bottom(t): return 0.0                             # immer 0
+        def V_left(t): return 0.0                               # ruht
+        def V_right(t): return 0.0                              # ruht
 
     elif type == "test":
         def U_top(t): return 1.0                                # konstant
         def U_bottom(t): return 0.0                             # ruht
-        def U_left(t): return 1.0                               # konstant
-        def U_right(t): return 0.0                              # ruht
+        def U_left(t): return 0.0                               # immer 0
+        def U_right(t): return 0.0                              # immer 0
+
+        def V_top(t): return 0.0                                # immer 0
+        def V_bottom(t): return 0.0                             # immer 0
+        def V_left(t): return 1.0                               # ruht
+        def V_right(t): return 0.0                              # ruht
     
-    return U_top, U_bottom, U_left, U_right
+    return U_top, U_bottom, U_left, U_right, V_top, V_bottom, V_left, V_right
 
 # -------------------------------------------------------------------------------------- #
 #                                 ZEITSCHRITT-FUNKTIONEN                                 #
@@ -264,10 +294,10 @@ def main():
     # Ganzes zero array, weil durch Piece-wise multiplication mit B eh nur der Rand gefiltert wird.
     psi_bc = np.zeros((NY, NX))     # Stromfunktion an den Rändern
 
-    U_top_func, U_bottom_func, U_left_func, U_right_func = init_velocity(RANDBEDINGUNG)
+    U_top_func, U_bottom_func, U_left_func, U_right_func, V_top_func, V_bottom_func, V_left_func, V_right_func = init_velocity(RANDBEDINGUNG)
 
     nu = abs(U_top_func(0)) * DIM_X / RE   # Kinematische Viskosität
-    dt = CFL * dx / abs(U_top_func(0))     # Zeitschritt aus CFL-Bedingung
+    dt = CFL * dx / abs(U_top_func(0))     # Zeitschritt aus CFL-Bedingung #TODO!!!!!!
 
     # --- Initialisierung ---
     np.random.seed(1234)
@@ -287,15 +317,15 @@ def main():
     mask_top = np.zeros((NY, NX), dtype = int)
     mask_top[0, :] = 1
 
-    # Maske für Wände (neuerdings aufgesplittet) #TODO testen, ob das richtig implementiert ist
+    # Maske für Wände (neuerdings aufgesplittet)
     mask_bottom = np.zeros((NY, NX), dtype=int)
     mask_bottom[-1, :] = 1
 
     mask_left = np.zeros((NY, NX), dtype=int)
-    mask_left[:, 0] = 1
+    mask_left[1:-1, 0] = 1
 
     mask_right = np.zeros((NY, NX), dtype=int)
-    mask_right[:, -1] = 1
+    mask_right[1:-1, -1] = 1
 
     # --- Ableitungsmatrizen ---
     Dx = derivative_matrix_2d(NX, NY, dx, dy, axis='x',order=1)
@@ -349,9 +379,13 @@ def main():
                 mask_right=mask_right,
                 psi_bc=psi_bc,
                 U_top=U_top_func(t), 
-                U_bottom=U_bottom_func(t), # 0
+                U_bottom=U_bottom_func(t),
                 U_left=U_left_func(t), #0
                 U_right=U_right_func(t), #0
+                V_top=U_top_func(t), #0
+                V_bottom=U_bottom_func(t), #0
+                V_left=U_left_func(t),
+                V_right=U_right_func(t),
                 nu=nu
             )
 
@@ -366,8 +400,10 @@ def main():
 
             # Update psi, u, v
             psi_flat = solve_poisson(omega_flat, Dxx, Dyy, NX, NY, mask_boundary, psi_bc)
-            u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, U_top_func(t), U_bottom_func(t), U_left_func(t), U_right_func(t), 
-                                              mask_top, mask_bottom, mask_left, mask_right)
+            u_flat, v_flat = compute_velocity(psi_flat, Dx, Dy, 
+                                              U_top_func(t), U_bottom_func(t), U_left_func(t), U_right_func(t), 
+                                              V_top_func(t), V_bottom_func(t), V_left_func(t), V_right_func(t),
+                                              mask_top, mask_bottom, mask_left, mask_right, mask_boundary)
 
             # Speichern für spätere Nutzung
             psi_list.append(psi_flat.reshape((NY, NX)))
