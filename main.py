@@ -177,7 +177,7 @@ def init_velocity(type="constant"):
 
         def V_top(t): return 0.0                                # immer 0
         def V_bottom(t): return 0.0                             # immer 0
-        def V_left(t): return 1.0                               # ruht
+        def V_left(t): return -1.0                              # konstant
         def V_right(t): return 0.0                              # ruht
     
     return U_top, U_bottom, U_left, U_right, V_top, V_bottom, V_left, V_right
@@ -245,10 +245,11 @@ def main():
     DIM_X, DIM_Y = 1.0, 1.0           # Größe des Simulationsfelds (Breite x Höhe)
 
     # --- Auflösung des Gitters ---
-    NX, NY = 80, 80                   # Gitterauflösung 
+    NX, NY = 50, 50                   # Gitterauflösung 
+    #NX, NY = 5, 5                    # Test
 
     # --- Simulationsdauer ---
-    N_INTER = 10000                   # Anzahl Zeitschritte
+    N_INTER = 1000                    # Anzahl Zeitschritte
 
     # --- Speicherintervall ---
     SAVE_INTERVAL = 100               # Alle wie viele Zeitschritte soll ein Snapshot gespeichert werden?
@@ -269,7 +270,7 @@ def main():
     #   - "top-bottom"      → Oben + unten bewegen sich, hier von links nach rechts
     #   - "test"            → Zum testen
     # Wenn du was testen willst einfach bei init_velocity() hinzufügen
-    RANDBEDINGUNG = "sine"
+    RANDBEDINGUNG = "test"
 
     # --- Zeitintegrationsmethode ---
     #   - "euler"           → Einfach, aber ungenau und instabil bei großen Zeitschritten
