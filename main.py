@@ -23,7 +23,7 @@ from datetime import datetime
 from fdm import derivative_matrix_2d
 
 # Funktionen zum Plotten und Erstellen von GIFs aus plotting.py importieren
-from plotting import plot_velocity_field, create_gif_from_folder
+from plotting import plot_velocity_field, plot_velocity_field_fancy, create_gif_from_folder
 
 
 ####################################### FUNKTIONEN ############################################
@@ -70,12 +70,10 @@ def compute_velocity(psi_flat, Dx, Dy,
     not_boundary = 1.0 - (W_top + W_bottom + W_left + W_right)
 
     # Berechne u = ∂ψ/∂y + Randgeschwindigkeit
-    u_flat = (Dy @ psi_flat) * not_boundary \
-             + U_top * W_top + U_bottom * W_bottom
+    u_flat = (Dy @ psi_flat) * not_boundary + U_top * W_top + U_bottom * W_bottom
 
     # Berechne v = -∂ψ/∂x + Randgeschwindigkeit
-    v_flat = (-Dx @ psi_flat) * not_boundary \
-             + U_left * W_left + U_right * W_right
+    v_flat = (-Dx @ psi_flat) * not_boundary + U_left * W_left + U_right * W_right
 
     return u_flat, v_flat
 
@@ -224,6 +222,7 @@ def main():
 
     # --- Speicherintervall ---
     SAVE_INTERVAL = 100               # Alle wie viele Zeitschritte soll ein Snapshot gespeichert werden?
+    SAVE_FANCY = 10                   # Alle wie viele Save intervall Schritte soll ein fancy Snapshot gespeichert werden?
 
     # --- CFL-Zahl ---
     CFL = 0.3                         # Stabilitätsbedingung → bei Werten über 1.0 wird es instabil 
@@ -349,10 +348,10 @@ def main():
                 mask_left=mask_left, 
                 mask_right=mask_right,
                 psi_bc=psi_bc,
-                U_top=U_top_func(t),
-                U_bottom=U_bottom_func(t),
-                U_left=U_left_func(t),
-                U_right=U_right_func(t),
+                U_top=U_top_func(t), 
+                U_bottom=U_bottom_func(t), # 0
+                U_left=U_left_func(t), #0
+                U_right=U_right_func(t), #0
                 nu=nu
             )
 
@@ -379,14 +378,22 @@ def main():
             # Geschwindigkeitsbetrag
             u_mag = np.sqrt(u_list[-1] ** 2 + v_list[-1] ** 2)
 
-            #TODO Möglichkeit für das Erstellen von Plot von Zwischenstand mit Colorbar, Beschriftung und etc. für Bericht hinzufügen
             if args.gif:
                 # aktuelle nur Plotten wenn Gif erzeugt wird
                 plot_velocity_field(X, Y, u_list[-1], v_list[-1], u_mag, t, folder)
+                
+                if (t // SAVE_INTERVAL) % SAVE_FANCY == 0:
+                    plot_velocity_field_fancy(
+                        X, Y, u_list[-1], v_list[-1], u_mag,
+                        t=t,
+                        folder=os.path.join(folder, "fancy"),
+                        title_base=f"Geschwindigkeitsfeld bei t = {t}",
+                        filename_base="fancy_velocity"
+                    )
 
     # --- Optional: GIF-Erstellung am Ende ---
     if args.gif:
-        create_gif_from_folder(folder, time=f"{timestamp}")
+        create_gif_from_folder(folder)
 
     # --- Optional: Ergebnisse speichern ---
     if args.save:

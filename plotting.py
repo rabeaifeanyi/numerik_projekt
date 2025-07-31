@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import PowerNorm
 from matplotlib import animation as animation
+from matplotlib.ticker import FormatStrFormatter
 import imageio.v2 as imageio
 
 
@@ -88,6 +89,63 @@ def plot_velocity_field(X, Y, u, v, u_mag, t, folder,
     # Bild abspeichern
     plt.savefig(f"{folder}/t{t:05}_contour.png")
     plt.close()
+
+def plot_velocity_field_fancy(X, Y, u, v, u_mag, t, folder,
+                              vector_field_step=6,
+                              title_base="Geschwindigkeitsfeld",
+                              filename_base="velocity_t"):
+    """
+    Erzeugt zwei PDF-Plots des Geschwindigkeitsfelds für die Abgabe
+    """
+
+    plt.rcParams["font.family"] = "Times New Roman"
+    norm = PowerNorm(gamma=0.8, vmin=0)
+    os.makedirs(folder, exist_ok=True)
+
+    # ----------- Plot 1: Quiver (Vektorfeld) ----------- #
+    fig1, ax1 = plt.subplots(figsize=(6, 5))
+    ax1.invert_yaxis()
+    contour1 = ax1.contourf(X, Y, u_mag, levels=CONTOUR_LEVELS, cmap="turbo", norm=norm)
+    cbar1 = fig1.colorbar(contour1, ax=ax1, fraction=0.046, pad=0.04, format=FormatStrFormatter('%.2f'))
+    cbar1.set_label("Geschwindigkeitsbetrag $|\\vec{u}|$")
+    ax1.set_xlabel("x-Richtung")
+    ax1.set_ylabel("y-Richtung")
+    ax1.set_title(f"{title_base} (Vektorfeld)")
+
+    mag_max = 0.6
+    factor = np.minimum(1, mag_max / (u_mag + 1e-8))
+    U_scaled = u * factor * 2
+    V_scaled = v * factor * 2
+
+    ax1.quiver(
+        X[1:-1:vector_field_step, 1:-1:vector_field_step],
+        Y[1:-1:vector_field_step, 1:-1:vector_field_step],
+        U_scaled[1:-1:vector_field_step, 1:-1:vector_field_step],
+        -V_scaled[1:-1:vector_field_step, 1:-1:vector_field_step],
+        color='white',
+        scale=9
+    )
+
+    fig1.tight_layout()
+    fig1.savefig(os.path.join(folder, f"{filename_base}{t:05}_quiver.pdf"), format="pdf", dpi=300)
+    plt.close(fig1)
+
+    # ----------- Plot 2: Streamlines ----------- #
+    fig2, ax2 = plt.subplots(figsize=(6, 5))
+    ax2.invert_yaxis()
+    contour2 = ax2.contourf(X, Y, u_mag, levels=CONTOUR_LEVELS, cmap="turbo", norm=norm)
+    cbar2 = fig2.colorbar(contour2, ax=ax2, fraction=0.046, pad=0.04, format=FormatStrFormatter('%.2f'))
+    cbar2.set_label("Geschwindigkeitsbetrag $|\\vec{u}|$")
+    ax2.set_xlabel("x-Richtung")
+    ax2.set_ylabel("y-Richtung")
+    ax2.set_title(f"{title_base} (Stromlinien)")
+
+    ax2.streamplot(X, Y, u, v, density=1.2, color='white', linewidth=0.8)
+
+    fig2.tight_layout()
+    fig2.savefig(os.path.join(folder, f"{filename_base}{t:05}_stream.pdf"), format="pdf", dpi=300)
+    plt.close(fig2)
+
 
 # -------------------------------------------------------------------------------------- #
 #                                GIF AUS BILDERN ERSTELLEN                               #
