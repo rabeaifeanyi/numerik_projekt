@@ -383,10 +383,10 @@ def main():
                 U_bottom=U_bottom_func(t),
                 U_left=U_left_func(t), #0
                 U_right=U_right_func(t), #0
-                V_top=U_top_func(t), #0
-                V_bottom=U_bottom_func(t), #0
-                V_left=U_left_func(t),
-                V_right=U_right_func(t),
+                V_top=V_top_func(t), #0
+                V_bottom=V_bottom_func(t), #0
+                V_left=V_left_func(t),
+                V_right=V_right_func(t),
                 nu=nu
             )
 
