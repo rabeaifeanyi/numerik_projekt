@@ -179,9 +179,6 @@ def create_streamplot(X,Y, u_final,v_final, t, folder):
 
     fig, ax = plt.subplots(figsize=(6, 5))
     ax.invert_yaxis()
-    # ax.set_xlabel("x in m")
-    # ax.set_ylabel("y in m")
-    # ax.set_title(f"Stromlinien bei n={t}")
 
     ax.streamplot(X, Y, u_final, v_final, density=2, color='black', linewidth=0.8)#, arrowstyle="-")
     ax.set_axis_off()
@@ -191,9 +188,6 @@ def create_streamplot(X,Y, u_final,v_final, t, folder):
     
     fig, ax = plt.subplots(figsize=(6, 5))
     ax.invert_yaxis()
-    # ax.set_xlabel("x in m")
-    # ax.set_ylabel("y in m")
-    # ax.set_title(f"Stromlinien bei n={t}")
 
     ax.streamplot(X, Y, u_final, v_final, density=2, color='black', linewidth=0.8, arrowstyle="-")
     ax.set_axis_off()

@@ -526,46 +526,6 @@ def main():
         print(f'Final u:\n{u_list[-1]}')
         print(f'Final v:\n{v_list[-1]}')
         print(f'Final omega:\n{omega_list[-1]}')
-        
-    # TODO delete later
-    folder_sim = f"plots_CFL{CFL:.2f}_Re{RE}_{TIMESTEP_METHOD}_{RANDBEDINGUNG}_{timestamp}".replace(".", "p")
-    plot_path = os.path.join("plots", folder_sim)
-    data_path = os.path.join("plots", folder_sim, "final_state.npz")
-
-    ### Simulationdaten laden ###
-    data = np.load(data_path)
-    psi_list = data['psi_list']
-    u_list = data['u_list']
-    v_list = data['v_list']
-    omega_list = data['omega_list']
-    NX = data['NX']
-    NY = data['NY']
-    DIM_X = data['DIM_X']
-    DIM_Y = data['DIM_Y']
-    dx = data['dx']
-    dy = data['dy']
-    CFL = data['CFL']
-    RE = data['RE']
-    nu = data['nu']
-    dt = data['dt']
-    N_INTER = data['N_INTER']
-    SAVE_INTERVAL = data['SAVE_INTERVAL']
-
-    ### Berechnungen ###
-    x = np.linspace(start = 0, stop = DIM_X, num = NX)
-    y = np.linspace(start = 0, stop = DIM_Y, num = NY)
-    X, Y = np.meshgrid(x, y)
-
-    u_final = u_list[-1]
-    v_final = v_list[-1]
-    psi_final = psi_list[-1]
-    omega_final = omega_list[-1]
-
-    print(psi_list.shape)    
-
-    create_streamplot(X, Y, u_final, v_final, N_INTER, plot_path)
-    
-    
 
 
 if __name__ == '__main__':
