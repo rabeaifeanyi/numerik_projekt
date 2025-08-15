@@ -129,7 +129,9 @@ def init_velocity(type="constant"):
         def V_right(t): return 0.0                              # ruht
 
     elif type == "positive-sine":
-        def U_top(t): return 1 + np.sin(2 * np.pi * t / 2000)   # sinusförmig
+        def U_top(t):
+            if t == 0: return 1.0
+            else: return np.abs(np.sin(2 * np.pi * t / 2000))   # sinusförmig
         def U_bottom(t): return 0.0                             # ruht
         def U_left(t): return 0.0                               # immer 0
         def U_right(t): return 0.0                              # immer 0
@@ -239,8 +241,8 @@ def main():
     DIM_X, DIM_Y = 1.0, 1.0           # Größe des Simulationsfelds (Breite x Höhe)
 
     # --- Auflösung des Gitters ---
-    NX, NY = 50, 50                   # Gitterauflösung 
-    #NX, NY = 5, 5                    # Test
+    NX, NY = 30, 30                  # Gitterauflösung 
+    # NX, NY = 5, 5                    # Test
 
     # --- Simulationsdauer ---
     N_INTER = 1000                    # Anzahl Zeitschritte
@@ -250,21 +252,21 @@ def main():
     SAVE_FANCY = 10                   # Alle wie viele Save intervall Schritte soll ein fancy Snapshot gespeichert werden?
 
     # --- CFL-Zahl ---
-    CFL = 0.3                         # Stabilitätsbedingung → bei Werten über 1.0 wird es instabil 
+    CFL = 0.5                         # Stabilitätsbedingung → bei Werten über 1.0 wird es instabil 
                                       # (so kann man einen "crash" verursachen)
 
     # --- Reynolds-Zahl ---
-    RE = 400                          # Beeinflusst die Turbulenz/Stabilität der Strömung
+    RE = 1000                          # Beeinflusst die Turbulenz/Stabilität der Strömung
 
     # --- Randbedingungen ("Bewegung der Wände") ---
     # Beispiele:
     #   - "constant"        → Obere Wand konstant (z. B. u = 1), Rest ruht → klassischer Fall
     #   - "sine"            → Obere Wand sinusförmig 
-    #   - "sine-positive"   → Nur positive Sinusbewegung, bzw. sinus plus 1, also kein Richtungswechsel
+    #   - "positive-sine"   → Nur positive Sinusbewegung, bzw. sinus plus 1, also kein Richtungswechsel
     #   - "top-bottom"      → Oben + unten bewegen sich, hier von links nach rechts
     #   - "test"            → Zum testen
     # Wenn du was testen willst einfach bei init_velocity() hinzufügen
-    RANDBEDINGUNG = "test"
+    RANDBEDINGUNG = "constant"
 
     # --- Zeitintegrationsmethode ---
     #   - "euler"           → Einfach, aber ungenau und instabil bei großen Zeitschritten
@@ -296,7 +298,7 @@ def main():
 
     # --- Initialisierung ---
     np.random.seed(1234)
-    omega_init = 1e-2 * (np.random.rand(NY, NX) - 0.5) # random werte zwischen -0.5 und 0.5
+    omega_init = np.zeros((NY, NX))
     psi_init = np.zeros((NY, NX))
     u_init = np.zeros((NY, NX))
     v_init = np.zeros((NY, NX))
@@ -388,7 +390,7 @@ def main():
         if TIMESTEP_METHOD == "euler":
             omega_flat[:] = euler_step(rhs_func, omega_flat, dt) # Euler
         elif TIMESTEP_METHOD == "runge-kutta":
-            omega_flat = rk4_step(rhs_func, omega_flat, dt) # RK4
+            omega_flat[:] = rk4_step(rhs_func, omega_flat, dt) # RK4
 
         if t % SAVE_INTERVAL == 0:
             progress_bar(t, N_INTER)
@@ -430,10 +432,22 @@ def main():
     if args.save:
         np.savez_compressed(
             f"{folder}/final_state.npz",
-            psi=psi_list[-1],
-            u=u_list[-1],
-            v=v_list[-1],
-            omega=omega_list[-1]
+            psi_list = psi_list,
+            u_list = u_list,
+            v_list = v_list,
+            omega_list = omega_list,
+            NX = NX,
+            NY = NY,
+            DIM_X = DIM_X,
+            DIM_Y = DIM_Y,
+            dx = dx,
+            dy = dy,
+            CFL = CFL,
+            RE = RE,
+            nu = nu,
+            dt = dt,
+            N_INTER = N_INTER,
+            SAVE_INTERVAL = SAVE_INTERVAL
         )
 
     # --- Optional: Ergebnisse ausgeben ---

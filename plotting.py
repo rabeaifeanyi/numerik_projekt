@@ -174,3 +174,61 @@ def create_gif_from_folder(image_folder, output_folder="gifs"):
             writer.append_data(image)
 
     print(f"GIF gespeichert unter: {output_gif}")
+
+def create_streamplot(X,Y, u_final,v_final, t, folder):
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.invert_yaxis()
+    # ax.set_xlabel("x in m")
+    # ax.set_ylabel("y in m")
+    # ax.set_title(f"Stromlinien bei n={t}")
+
+    ax.streamplot(X, Y, u_final, v_final, density=2, color='black', linewidth=0.8, arrowstyle="-")
+    ax.set_axis_off()
+    fig.tight_layout()
+    fig.savefig(os.path.join(folder, f"streamlines.pdf"), format="pdf", dpi=300)
+    plt.close(fig)
+
+
+def main():
+    ### Pfade definieren ###
+    folder_sim = "plots_CFL0p50_Re1000_euler_constant_2025-08-10_19-11-14"
+    plot_path = os.path.join("plots", folder_sim)
+    data_path = os.path.join("plots", folder_sim, "final_state.npz")
+
+    ### Simulationdaten laden ###
+    data = np.load(data_path)
+    psi_list = data['psi_list']
+    u_list = data['u_list']
+    v_list = data['v_list']
+    omega_list = data['omega_list']
+    NX = data['NX']
+    NY = data['NY']
+    DIM_X = data['DIM_X']
+    DIM_Y = data['DIM_Y']
+    dx = data['dx']
+    dy = data['dy']
+    CFL = data['CFL']
+    RE = data['RE']
+    nu = data['nu']
+    dt = data['dt']
+    N_INTER = data['N_INTER']
+    SAVE_INTERVAL = data['SAVE_INTERVAL']
+
+    ### Berechnungen ###
+    x = np.linspace(start = 0, stop = DIM_X, num = NX)
+    y = np.linspace(start = 0, stop = DIM_Y, num = NY)
+    X, Y = np.meshgrid(x, y)
+
+    u_final = u_list[-1]
+    v_final = v_list[-1]
+    psi_final = psi_list[-1]
+    omega_final = omega_list[-1]
+
+    print(psi_list.shape)    
+
+    create_streamplot(X, Y, u_final, v_final, N_INTER, plot_path)
+
+
+if __name__ == "__main__":
+    main()
