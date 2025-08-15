@@ -1,6 +1,6 @@
-# 🌀 2D-Strömungssimulation
+# 2D-Strömungssimulation der Lid-Driven-Cavity 🌀
 
-![Simulation](gifs/plots_CFL0p30_Re400_euler_positive-sine_2025-07-29_12-24-09.gif)
+![Simulation](report/periodisch/top-positive-sine/top-positive-sine.gif)
 
 ## Setup mit micromamba (oder conda)
 
