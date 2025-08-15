@@ -17,7 +17,7 @@ from datetime import datetime
 from fdm import derivative_matrix_2d
 
 # Funktionen zum Plotten und Erstellen von GIFs aus plotting.py importieren
-from plotting import plot_velocity_field, plot_velocity_field_fancy, create_gif_from_folder
+from plotting import plot_velocity_field, plot_velocity_field_fancy, create_gif_from_folder, create_streamplot
 
 
 ####################################### FUNKTIONEN ############################################
@@ -117,64 +117,133 @@ def init_velocity(type="constant"):
     """
     Gibt je eine Funktion zurück, die die Wandgeschwindigkeit in Abhängigkeit von der Zeit liefert.
     """
+    T = 2000            # Periode in "Zeitschritt"-Einheiten für zeitabhängige Fälle
+    U0 = 1.0            # Referenzgeschwindigkeit
+    beta = 1.0 / T      # Ramp-Rate: nach ~T Schritten auf 1.0
+
     if type == "constant":
-        def U_top(t): return 1.0                                # konstant
-        def U_bottom(t): return 0.0                             # ruht
-        def U_left(t): return 0.0                               # immer 0
-        def U_right(t): return 0.0                              # immer 0
-        
-        def V_top(t): return 0.0                                # immer 0
-        def V_bottom(t): return 0.0                             # immer 0
-        def V_left(t): return 0.0                               # ruht
-        def V_right(t): return 0.0                              # ruht
+        # Klassische LDC: oben konstant, Rest ruht
+        def U_top(t): return U0
+        def U_bottom(t): return 0.0
+        def U_left(t): return 0.0
+        def U_right(t): return 0.0
 
-    elif type == "positive-sine":
-        def U_top(t):
-            if t == 0: return 1.0
-            else: return np.abs(np.sin(2 * np.pi * t / 2000))   # sinusförmig
-        def U_bottom(t): return 0.0                             # ruht
-        def U_left(t): return 0.0                               # immer 0
-        def U_right(t): return 0.0                              # immer 0
-
-        def V_top(t): return 0.0                                # immer 0
-        def V_bottom(t): return 0.0                             # immer 0
-        def V_left(t): return 0.0                               # ruht
-        def V_right(t): return 0.0                              # ruht
-    
-    elif type == "sine":
-        def U_top(t):
-            if t == 0: return 1.0
-            else: return np.sin(2 * np.pi * t / 2000)           # sinusförmig
-        def U_bottom(t): return 0.0                             # ruht
-        def U_left(t): return 0.0                               # immer 0
-        def U_right(t): return 0.0                              # immer 0
-
-        def V_top(t): return 0.0                                # immer 0
-        def V_bottom(t): return 0.0                             # immer 0
-        def V_left(t): return 0.0                               # ruht
-        def V_right(t): return 0.0                              # ruht
+        def V_top(t): return 0.0
+        def V_bottom(t): return 0.0
+        def V_left(t): return 0.0
+        def V_right(t): return 0.0
 
     elif type == "top-bottom":
-        def U_top(t): return 1.0                                # konstant
-        def U_bottom(t): return 1.0                             # konstant
-        def U_left(t): return 0.0                               # immer 0
-        def U_right(t): return 0.0                              # immer 0
+        # Oben und unten gleichgerichtet
+        def U_top(t): return U0
+        def U_bottom(t): return U0
+        def U_left(t): return 0.0
+        def U_right(t): return 0.0
 
-        def V_top(t): return 0.0                                # immer 0
-        def V_bottom(t): return 0.0                             # immer 0
-        def V_left(t): return 0.0                               # ruht
-        def V_right(t): return 0.0                              # ruht
+        def V_top(t): return 0.0
+        def V_bottom(t): return 0.0
+        def V_left(t): return 0.0
+        def V_right(t): return 0.0
 
+    elif type == "top-negative-bottom":
+        # Oben und unten entgegengesetzt
+        def U_top(t): return U0
+        def U_bottom(t): return -U0
+        def U_left(t): return 0.0
+        def U_right(t): return 0.0
+
+        def V_top(t): return 0.0
+        def V_bottom(t): return 0.0
+        def V_left(t): return 0.0
+        def V_right(t): return 0.0
+
+    elif type == "left":
+        # Nur links: vertikale Wandbewegung (tangential an linker Wand)
+        def U_top(t): return 0.0
+        def U_bottom(t): return 0.0
+        def U_left(t): return 0.0
+        def U_right(t): return 0.0
+
+        def V_top(t): return 0.0
+        def V_bottom(t): return 0.0
+        def V_left(t): return -U0    # nach unten
+        def V_right(t): return 0.0
+
+    elif type == "top-left":
+        # Oben + links gleichzeitig
+        def U_top(t): return U0
+        def U_bottom(t): return 0.0
+        def U_left(t): return 0.0
+        def U_right(t): return 0.0
+
+        def V_top(t): return 0.0
+        def V_bottom(t): return 0.0
+        def V_left(t): return -U0
+        def V_right(t): return 0.0
+
+    elif type == "circle":
+        # Alle Wände im Uhrzeigersinn (konstant)
+        # (oben +x, rechts -y, unten -x, links +y)
+        def U_top(t): return +0.5
+        def U_bottom(t): return -0.5
+        def U_left(t): return 0.0
+        def U_right(t): return 0.0
+
+        def V_top(t): return 0.0
+        def V_bottom(t): return 0.0
+        def V_left(t): return +0.5
+        def V_right(t): return -0.5
+
+    # ---------------- Zeitabhängig (Lid oben) ----------------
+
+    elif type == "sine":
+        # Sinus mit Richtungswechsel
+        def U_top(t): return U0 if t == 0 else np.sin(2 * np.pi * t / T)
+        def U_bottom(t): return 0.0
+        def U_left(t): return 0.0
+        def U_right(t): return 0.0
+
+        def V_top(t): return 0.0
+        def V_bottom(t): return 0.0
+        def V_left(t): return 0.0
+        def V_right(t): return 0.0
+
+    elif type == "positive-sine":
+        # Positiver Sinus (keine Richtungsumkehr)
+        def U_top(t): return U0 if t == 0 else np.abs(np.sin(2 * np.pi * t / T))
+        def U_bottom(t): return 0.0
+        def U_left(t): return 0.0
+        def U_right(t): return 0.0
+
+        def V_top(t): return 0.0
+        def V_bottom(t): return 0.0
+        def V_left(t): return 0.0
+        def V_right(t): return 0.0
+
+    elif type == "pulse":
+        # Puls/Rechteck: 1 wenn sin(.)>0, sonst 0
+        def U_top(t):
+            if t == 0: return U0
+            return U0 if np.sin(2 * np.pi * t / T) > 0 else 0.0
+        def U_bottom(t): return 0.0
+        def U_left(t): return 0.0
+        def U_right(t): return 0.0
+
+        def V_top(t): return 0.0
+        def V_bottom(t): return 0.0
+        def V_left(t): return 0.0
+        def V_right(t): return 0.0
+        
     elif type == "test":
-        def U_top(t): return 1.0                                # konstant
-        def U_bottom(t): return 0.0                             # ruht
-        def U_left(t): return 0.0                               # immer 0
-        def U_right(t): return 0.0                              # immer 0
+        def U_top(t): return 1.0                             
+        def U_bottom(t): return 0.0                       
+        def U_left(t): return 0.0                               # Achtung das muss immer 0
+        def U_right(t): return 0.0                              # Achtung das muss immer 0
 
-        def V_top(t): return 0.0                                # immer 0
-        def V_bottom(t): return 0.0                             # immer 0
-        def V_left(t): return -1.0                              # konstant
-        def V_right(t): return 0.0                              # ruht
+        def V_top(t): return 0.0                                # Achtung das muss immer 0
+        def V_bottom(t): return 0.0                             # Achtung das muss immer 0
+        def V_left(t): return -1.0                          
+        def V_right(t): return 0.0                  
     
     return U_top, U_bottom, U_left, U_right, V_top, V_bottom, V_left, V_right
 
@@ -241,22 +310,22 @@ def main():
     DIM_X, DIM_Y = 1.0, 1.0           # Größe des Simulationsfelds (Breite x Höhe)
 
     # --- Auflösung des Gitters ---
-    NX, NY = 30, 30                  # Gitterauflösung 
+    NX, NY = 60, 60                  # Gitterauflösung 
     # NX, NY = 5, 5                    # Test
 
     # --- Simulationsdauer ---
-    N_INTER = 1000                    # Anzahl Zeitschritte
+    N_INTER = 2500                    # Anzahl Zeitschritte
 
     # --- Speicherintervall ---
-    SAVE_INTERVAL = 100               # Alle wie viele Zeitschritte soll ein Snapshot gespeichert werden?
-    SAVE_FANCY = 10                   # Alle wie viele Save intervall Schritte soll ein fancy Snapshot gespeichert werden?
+    SAVE_INTERVAL = 50               # Alle wie viele Zeitschritte soll ein Snapshot gespeichert werden?
+    SAVE_FANCY = 1000                   # Alle wie viele Save intervall Schritte soll ein fancy Snapshot gespeichert werden?
 
     # --- CFL-Zahl ---
     CFL = 0.5                         # Stabilitätsbedingung → bei Werten über 1.0 wird es instabil 
                                       # (so kann man einen "crash" verursachen)
 
     # --- Reynolds-Zahl ---
-    RE = 1000                          # Beeinflusst die Turbulenz/Stabilität der Strömung
+    RE = 400                          # Beeinflusst die Turbulenz/Stabilität der Strömung
 
     # --- Randbedingungen ("Bewegung der Wände") ---
     # Beispiele:
@@ -266,7 +335,8 @@ def main():
     #   - "top-bottom"      → Oben + unten bewegen sich, hier von links nach rechts
     #   - "test"            → Zum testen
     # Wenn du was testen willst einfach bei init_velocity() hinzufügen
-    RANDBEDINGUNG = "constant"
+    # sine positive-sine pulse
+    RANDBEDINGUNG = "positive-sine"
 
     # --- Zeitintegrationsmethode ---
     #   - "euler"           → Einfach, aber ungenau und instabil bei großen Zeitschritten
@@ -456,6 +526,46 @@ def main():
         print(f'Final u:\n{u_list[-1]}')
         print(f'Final v:\n{v_list[-1]}')
         print(f'Final omega:\n{omega_list[-1]}')
+        
+    # TODO delete later
+    folder_sim = f"plots_CFL{CFL:.2f}_Re{RE}_{TIMESTEP_METHOD}_{RANDBEDINGUNG}_{timestamp}".replace(".", "p")
+    plot_path = os.path.join("plots", folder_sim)
+    data_path = os.path.join("plots", folder_sim, "final_state.npz")
+
+    ### Simulationdaten laden ###
+    data = np.load(data_path)
+    psi_list = data['psi_list']
+    u_list = data['u_list']
+    v_list = data['v_list']
+    omega_list = data['omega_list']
+    NX = data['NX']
+    NY = data['NY']
+    DIM_X = data['DIM_X']
+    DIM_Y = data['DIM_Y']
+    dx = data['dx']
+    dy = data['dy']
+    CFL = data['CFL']
+    RE = data['RE']
+    nu = data['nu']
+    dt = data['dt']
+    N_INTER = data['N_INTER']
+    SAVE_INTERVAL = data['SAVE_INTERVAL']
+
+    ### Berechnungen ###
+    x = np.linspace(start = 0, stop = DIM_X, num = NX)
+    y = np.linspace(start = 0, stop = DIM_Y, num = NY)
+    X, Y = np.meshgrid(x, y)
+
+    u_final = u_list[-1]
+    v_final = v_list[-1]
+    psi_final = psi_list[-1]
+    omega_final = omega_list[-1]
+
+    print(psi_list.shape)    
+
+    create_streamplot(X, Y, u_final, v_final, N_INTER, plot_path)
+    
+    
 
 
 if __name__ == '__main__':

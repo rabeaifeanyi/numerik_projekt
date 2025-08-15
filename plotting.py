@@ -183,16 +183,28 @@ def create_streamplot(X,Y, u_final,v_final, t, folder):
     # ax.set_ylabel("y in m")
     # ax.set_title(f"Stromlinien bei n={t}")
 
-    ax.streamplot(X, Y, u_final, v_final, density=2, color='black', linewidth=0.8, arrowstyle="-")
+    ax.streamplot(X, Y, u_final, v_final, density=2, color='black', linewidth=0.8)#, arrowstyle="-")
     ax.set_axis_off()
     fig.tight_layout()
     fig.savefig(os.path.join(folder, f"streamlines.pdf"), format="pdf", dpi=300)
     plt.close(fig)
+    
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.invert_yaxis()
+    # ax.set_xlabel("x in m")
+    # ax.set_ylabel("y in m")
+    # ax.set_title(f"Stromlinien bei n={t}")
 
+    ax.streamplot(X, Y, u_final, v_final, density=2, color='black', linewidth=0.8, arrowstyle="-")
+    ax.set_axis_off()
+    fig.tight_layout()
+    fig.savefig(os.path.join(folder, f"streamlines_noarrow.pdf"), format="pdf", dpi=300)
+    plt.close(fig)
+    
 
 def main():
     ### Pfade definieren ###
-    folder_sim = "plots_CFL0p50_Re1000_euler_constant_2025-08-10_19-11-14"
+    folder_sim = "plots_CFL0p50_Re400_euler_top-bottom_2025-08-15_17-25-32"
     plot_path = os.path.join("plots", folder_sim)
     data_path = os.path.join("plots", folder_sim, "final_state.npz")
 

@@ -1,0 +1,11 @@
+Simulation Parameters:
+  - Grid Size: 60 x 60
+  - DIM_X: 1.0
+  - DIM_Y: 1.0
+  - dx: 0.01694915254237288
+  - dy: 0.01694915254237288
+  - CFL: 0.5
+  - Re: 400
+  - Nu: 0.0025
+  - Time Step: 0.00847457627118644
+  - Total Iterations: 50000
